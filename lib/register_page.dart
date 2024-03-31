@@ -1,19 +1,19 @@
-// ignore_for_file: use_build_context_synchronously
+// ignore_for_file: use_build_context_synchronously, use_key_in_widget_constructors
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-class LoginPage extends StatelessWidget {
+class RegisterPage extends StatelessWidget {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  LoginPage({Key? key}) : super(key: key);
+  RegisterPage({Key? key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Login'),
+        title: const Text('Register'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -33,16 +33,9 @@ class LoginPage extends StatelessWidget {
             const SizedBox(height: 32.0),
             ElevatedButton(
               onPressed: () {
-                _login(context);
+                _register(context);
               },
-              child: const Text('Login'),
-            ),
-            const SizedBox(height: 16.0),
-            TextButton(
-              onPressed: () {
-                Navigator.pushNamed(context, '/register');
-              },
-              child: const Text('Don\'t have an account? Register here'),
+              child: const Text('Register'),
             ),
           ],
         ),
@@ -50,29 +43,29 @@ class LoginPage extends StatelessWidget {
     );
   }
 
-  void _login(BuildContext context) async {
+  void _register(BuildContext context) async {
     final username = _usernameController.text;
     final password = _passwordController.text;
 
-    // Kirim permintaan login ke backend
+    // Kirim permintaan registrasi ke backend
     final response = await http.post(
-      Uri.parse('http://192.168.101.53:3000/login'),
+      Uri.parse('http://192.168.101.53:3000/register'),
       body: {
         'username': username,
         'password': password,
       },
     );
 
-    if (response.statusCode == 200) {
-      // Jika login berhasil, arahkan ke halaman lain (misalnya halaman utama aplikasi)
-      Navigator.pushNamed(context, '/main');
-      // Tampilkan alert
+    if (response.statusCode == 201) {
+      // Jika registrasi berhasil, arahkan ke halaman login
+      Navigator.pushNamed(context, '/');
+      // Tampilkan alert ketika registrasi berhasil
       showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: const Text('Login Successful'),
-            content: const Text('You have successfully logged in.'),
+            title: const Text('Registration Successful'),
+            content: const Text('You have successfully registered.'),
             actions: <Widget>[
               TextButton(
                 onPressed: () {
@@ -85,11 +78,10 @@ class LoginPage extends StatelessWidget {
         },
       );
     } else {
-      // Jika login gagal, tampilkan pesan kesalahan
+      // Jika registrasi gagal, tampilkan pesan kesalahan
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content:
-              Text('Login failed. Please check your username and password.'),
+          content: Text('Registration failed. Please try again.'),
         ),
       );
     }

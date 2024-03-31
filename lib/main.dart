@@ -1,36 +1,38 @@
+// ignore_for_file: use_key_in_widget_constructors
+
 import 'package:flutter/material.dart';
-import 'kelola_sampah_organik.dart';
-import 'bank_sampah.dart';
 import 'login_page.dart';
-import 'registration_page.dart';
-import 'rumah_edukasi.dart';
+import 'register_page.dart';
 
 void main() {
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({Key? key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Sustainable Mobile System',
+      title: 'Flutter Demo',
       theme: ThemeData(
-        primarySwatch: Colors.green,
+        primarySwatch: Colors.blue,
       ),
       initialRoute: '/',
       routes: {
         '/': (context) => LoginPage(),
-        '/main': (context) => const MainMenu(),
-        '/register': (context) => RegistrationPage(),
+        '/register': (context) => RegisterPage(),
+        '/main': (context) => const MainMenu(username: ''),
+        // tambahkan rute untuk halaman utama aplikasi jika diperlukan
       },
     );
   }
 }
 
 class MainMenu extends StatelessWidget {
-  const MainMenu({super.key});
+  final String username;
+
+  const MainMenu({Key? key, required this.username});
 
   @override
   Widget build(BuildContext context) {
@@ -47,42 +49,28 @@ class MainMenu extends StatelessWidget {
           ),
         ],
       ),
-      body: Center(
-        child: GridView.count(
-          crossAxisCount: 2,
-          padding: const EdgeInsets.all(16),
-          mainAxisSpacing: 20,
-          crossAxisSpacing: 20,
-          children: <Widget>[
-            _buildMenuItem(
-              context,
-              'Kelola Sampah Organik',
-              Icons.eco,
-              () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const KelolaSampahOrganikPage()),
-              ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Welcome, $username!',
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
-            _buildMenuItem(
-              context,
-              'Bank Sampah',
-              Icons.account_balance_wallet,
-              () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const BankSampahPage()),
-              ),
+            const SizedBox(height: 20),
+            GridView.count(
+              crossAxisCount: 2,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              shrinkWrap: true,
+              children: [
+                _buildMenuItem(context, 'Kelola Sampah Organik', Icons.eco,
+                    '/kelola_sampah_organik'),
+                _buildMenuItem(context, 'Bank Sampah',
+                    Icons.account_balance_wallet, '/bank_sampah'),
+              ],
             ),
-            _buildMenuItem(
-              context,
-              'Rumah Edukasi',
-              Icons.home,
-              () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const RumahEdukasiPage()),
-              ),
-            )
           ],
         ),
       ),
@@ -90,9 +78,11 @@ class MainMenu extends StatelessWidget {
   }
 
   Widget _buildMenuItem(
-      BuildContext context, String title, IconData iconData, Function() onTap) {
+      BuildContext context, String title, IconData iconData, String route) {
     return InkWell(
-      onTap: onTap,
+      onTap: () {
+        Navigator.pushNamed(context, route);
+      },
       child: Card(
         elevation: 4,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
