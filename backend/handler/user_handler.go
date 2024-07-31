@@ -2,7 +2,9 @@ package handler
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
+	"encoding/hex"
 	"net/http"
 	"smsbackends/db"
 	"smsbackends/models"
@@ -16,13 +18,15 @@ func Register(c *fiber.Ctx) error {
         return err
     }
 
+    hashedPassword := hashPassword(user.Password)
+
     db, err := db.ConnectDB()
     if err != nil {
         return err
     }
     defer db.Close()
 
-    _, err = db.ExecContext(context.Background(), "INSERT INTO users (username, password) VALUES (?, ?)", user.Username, user.Password)
+    _, err = db.ExecContext(context.Background(), "INSERT INTO users (username, password) VALUES (?, ?)", user.Username, hashedPassword)
     if err != nil {
         return err
     }
@@ -32,11 +36,22 @@ func Register(c *fiber.Ctx) error {
     })
 }
 
+// Function to hash password using SHA-256
+func hashPassword(password string) string {
+    hasher := sha256.New()
+    hasher.Write([]byte(password))
+    hashedPassword := hex.EncodeToString(hasher.Sum(nil))
+    return hashedPassword
+}
+
 func Login(c *fiber.Ctx) error {
     var user models.User
     if err := c.BodyParser(&user); err != nil {
         return err
     }
+
+    // Hash the password using SHA-256
+    hashedPassword := hashPassword(user.Password)
 
     db, err := db.ConnectDB()
     if err != nil {
@@ -44,7 +59,7 @@ func Login(c *fiber.Ctx) error {
     }
     defer db.Close()
 
-    row := db.QueryRowContext(context.Background(), "SELECT id, username FROM users WHERE username = ? AND password = ?", user.Username, user.Password)
+    row := db.QueryRowContext(context.Background(), "SELECT id, username FROM users WHERE username = ? AND password = ?", user.Username, hashedPassword)
 
     var id int
     var username string
@@ -63,3 +78,4 @@ func Login(c *fiber.Ctx) error {
         "user":    fiber.Map{"id": id, "username": username},
     })
 }
+

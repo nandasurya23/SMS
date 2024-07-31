@@ -1,8 +1,10 @@
-// ignore_for_file: use_key_in_widget_constructors
+// ignore_for_file: use_key_in_widget_constructors, unused_import, non_constant_identifier_names
 
 import 'package:flutter/material.dart';
+import 'bank_sampah.dart';
 import 'login_page.dart';
 import 'register_page.dart';
+import 'kelola_sampah_organik.dart';
 
 void main() {
   runApp(const MyApp());
@@ -23,11 +25,16 @@ class MyApp extends StatelessWidget {
         '/': (context) => LoginPage(),
         '/register': (context) => RegisterPage(),
         '/main': (context) => const MainMenu(username: ''),
-        // tambahkan rute untuk halaman utama aplikasi jika diperlukan
+        '/kelola_sampah_organik': (context) => const KelolaSampahOrganikPage(),
+        '/bank_sampah': (context) => const BankSampahPage(),
       },
     );
   }
+  
+  KelolaSampahOrganik() {}
 }
+
+
 
 class MainMenu extends StatelessWidget {
   final String username;

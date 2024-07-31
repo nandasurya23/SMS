@@ -1,13 +1,15 @@
-// ignore_for_file: use_build_context_synchronously
+// ignore_for_file: use_key_in_widget_constructors, use_build_context_synchronously
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class LoginPage extends StatelessWidget {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  LoginPage({Key? key}) : super(key: key);
+  LoginPage({Key? key});
 
   @override
   Widget build(BuildContext context) {
@@ -54,19 +56,22 @@ class LoginPage extends StatelessWidget {
     final username = _usernameController.text;
     final password = _passwordController.text;
 
-    // Kirim permintaan login ke backend
+    // Hash the password using SHA-256
+    final hashedPassword = sha256.convert(utf8.encode(password)).toString();
+
+    // Send login request to the backend
     final response = await http.post(
       Uri.parse('http://192.168.101.53:3000/login'),
       body: {
         'username': username,
-        'password': password,
+        'password': hashedPassword,
       },
     );
 
     if (response.statusCode == 200) {
-      // Jika login berhasil, arahkan ke halaman lain (misalnya halaman utama aplikasi)
+      // If login is successful, navigate to another page (e.g., main page of the application)
       Navigator.pushNamed(context, '/main');
-      // Tampilkan alert
+      // Show success alert
       showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -85,11 +90,10 @@ class LoginPage extends StatelessWidget {
         },
       );
     } else {
-      // Jika login gagal, tampilkan pesan kesalahan
+      // If login fails, show error message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content:
-              Text('Login failed. Please check your username and password.'),
+          content: Text('Login failed. Please check your username and password.'),
         ),
       );
     }
