@@ -14,19 +14,14 @@ class _BankSampahPageState extends State<BankSampahPage> {
   final TextEditingController _kertasController = TextEditingController();
   final TextEditingController _botolController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
-  final TextEditingController _dateController = TextEditingController();
   bool _dataValid = false;
-  DateTime? _selectedDate;
 
   void _validateData() {
     if (_plastikController.text.isNotEmpty &&
         _kertasController.text.isNotEmpty &&
         _botolController.text.isNotEmpty &&
-        _notesController.text.isNotEmpty &&
-        _selectedDate != null) {
-      setState(() {
-        _dataValid = true;
-      });
+        _notesController.text.isNotEmpty) {
+      _showConfirmationDialog();
     } else {
       setState(() {
         _dataValid = false;
@@ -51,19 +46,50 @@ class _BankSampahPageState extends State<BankSampahPage> {
     }
   }
 
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? pickedDate = await showDatePicker(
+  int _updateTotalTransactions() {
+    int plastik = int.tryParse(_plastikController.text) ?? 0;
+    int kertas = int.tryParse(_kertasController.text) ?? 0;
+    int botol = int.tryParse(_botolController.text) ?? 0;
+    return plastik + kertas + botol;
+  }
+
+  void _showConfirmationDialog() {
+    showDialog(
       context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Konfirmasi'),
+          content: const Text('Apakah Anda ingin menyimpan data ini?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () {
+                int totalTransactions = _updateTotalTransactions();
+                Navigator.pop(context); // Tutup dialog konfirmasi
+                Navigator.pushReplacementNamed(
+                  context,
+                  '/main',
+                  arguments: {
+                    'username': 'User123', // Ganti dengan username yang sesungguhnya
+                    'totalTransactions': totalTransactions,
+                  },
+                );
+              },
+              child: const Text('Konfirmasi'),
+            ),
+          ],
+        );
+      },
     );
-    if (pickedDate != null) {
-      setState(() {
-        _selectedDate = pickedDate;
-        _dateController.text = pickedDate.toString().substring(0, 10);
-      });
-    }
   }
 
   @override
@@ -87,62 +113,95 @@ class _BankSampahPageState extends State<BankSampahPage> {
                 controller: _plastikController,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
-                    labelText: 'Jumlah Sampah Plastik (kg)',
-                    suffixIcon: Icon(Icons.balance)),
+                  labelText: 'Jumlah Sampah Plastik (kg)',
+                  suffixIcon: Icon(Icons.balance),
+                  border: OutlineInputBorder(),
+                ),
               ),
               const SizedBox(height: 10),
               TextFormField(
                 controller: _kertasController,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
-                    labelText: 'Jumlah Sampah Kertas (kg)',
-                    suffixIcon: Icon(Icons.balance)),
+                  labelText: 'Jumlah Sampah Kertas (kg)',
+                  suffixIcon: Icon(Icons.balance),
+                  border: OutlineInputBorder(),
+                ),
               ),
               const SizedBox(height: 10),
               TextFormField(
                 controller: _botolController,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
-                    labelText: 'Jumlah Sampah Botol (kg)',
-                    suffixIcon: Icon(Icons.balance)),
+                  labelText: 'Jumlah Sampah Botol (kg)',
+                  suffixIcon: Icon(Icons.balance),
+                  border: OutlineInputBorder(),
+                ),
               ),
-              const SizedBox(
-                height: 10,
-              ),
+              const SizedBox(height: 10),
               TextFormField(
                 controller: _notesController,
                 keyboardType: TextInputType.text,
                 decoration: const InputDecoration(
-                    labelText: 'Masukan Note',
-                    suffixIcon: Icon(Icons.assignment)),
-              ),
-              const SizedBox(height: 20),
-              TextFormField(
-                controller: _dateController,
-                readOnly: true,
-                onTap: () => _selectDate(context),
-                decoration: const InputDecoration(
-                  labelText: 'Tanggal Pengambilan Sampah',
-                  suffixIcon: Icon(Icons.calendar_today),
+                  labelText: 'Masukan Note',
+                  suffixIcon: Icon(Icons.assignment),
+                  border: OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 20),
               ElevatedButton(
-                onPressed: () {
-                  _validateData();
-                },
+                onPressed: _validateData,
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.white, backgroundColor: Colors.green,
+                  minimumSize: const Size.fromHeight(50),
+                ),
                 child: const Text('Simpan'),
               ),
               const SizedBox(height: 20),
               _dataValid
-                  ? Text(
-                      'Jadwal Pengambilan Sampah: ${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}',
-                      style: const TextStyle(fontSize: 16),
+                  ? const Text(
+                      'Data berhasil disimpan!',
+                      style: TextStyle(fontSize: 16, color: Colors.green),
                     )
                   : Container(),
+              const SizedBox(height: 20),
+              Text(
+                'Total Transaksi: ${_updateTotalTransactions()} kg',
+                style: const TextStyle(fontSize: 16, color: Colors.green),
+              ),
             ],
           ),
         ),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: 2,
+        onTap: (index) {
+          if (index == 0) {
+            Navigator.pushReplacementNamed(context, '/main');
+          } else if (index == 1) {
+            Navigator.pushReplacementNamed(context, '/kelola_sampah_organik');
+          } else if (index == 3) {
+            Navigator.pushReplacementNamed(context, '/rumah_edukasi');
+          }
+        },
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Beranda',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.eco),
+            label: 'Kelola Sampah',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.account_balance_wallet),
+            label: 'Bank Sampah',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.book),
+            label: 'Rumah Edukasi',
+          ),
+        ],
       ),
     );
   }

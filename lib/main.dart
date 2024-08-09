@@ -1,56 +1,138 @@
-// ignore_for_file: use_key_in_widget_constructors, unused_import, non_constant_identifier_names
+// ignore_for_file: library_private_types_in_public_api
 
 import 'package:flutter/material.dart';
 import 'bank_sampah.dart';
 import 'login_page.dart';
 import 'register_page.dart';
 import 'kelola_sampah_organik.dart';
+import 'rumah_edukasi.dart';
 
 void main() {
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key});
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'SMS',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.green,
+        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+          backgroundColor: Colors.white,
+          selectedItemColor: Colors.green,
+          unselectedItemColor: Colors.grey,
+        ),
+        scaffoldBackgroundColor: Colors.grey[200], // Background color of the Scaffold
       ),
       initialRoute: '/',
       routes: {
-        '/': (context) => LoginPage(),
+        '/': (context) => const LoginPage(),
         '/register': (context) => RegisterPage(),
-        '/main': (context) => const MainMenu(username: ''),
+        '/main': (context) => const MainMenu(),
         '/kelola_sampah_organik': (context) => const KelolaSampahOrganikPage(),
         '/bank_sampah': (context) => const BankSampahPage(),
+        '/rumah_edukasi': (context) => const RumahEdukasiPage(),
+      },
+      onGenerateRoute: (settings) {
+        if (settings.name == '/main') {
+          final username = settings.arguments as String?;
+          return MaterialPageRoute(
+            builder: (context) => MainMenu(username: username),
+          );
+        }
+        return null;
       },
     );
   }
-  
-  KelolaSampahOrganik() {}
 }
 
+class MainMenu extends StatefulWidget {
+  final String? username;
 
+  const MainMenu({super.key, this.username});
 
-class MainMenu extends StatelessWidget {
-  final String username;
+  @override
+  _MainMenuState createState() => _MainMenuState();
+}
 
-  const MainMenu({Key? key, required this.username});
+class _MainMenuState extends State<MainMenu> {
+  int _selectedIndex = 0;
+  int totalTransactions = 0; // Placeholder for total transactions
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _fetchTotalTransactions();
+  }
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+
+    switch (index) {
+      case 0:
+        Navigator.pushReplacementNamed(
+          context,
+          '/main',
+          arguments: widget.username,
+        );
+        break;
+      case 1:
+        Navigator.pushReplacementNamed(context, '/kelola_sampah_organik');
+        break;
+      case 2:
+        Navigator.pushReplacementNamed(context, '/bank_sampah');
+        break;
+      case 3:
+        Navigator.pushReplacementNamed(context, '/rumah_edukasi');
+        break;
+    }
+  }
+
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) {
+      return 'Pagi ${widget.username ?? ''}';
+    } else if (hour < 17) {
+      return 'Siang ${widget.username ?? ''}';
+    } else {
+      return 'Malam ${widget.username ?? ''}';
+    }
+  }
+
+  Future<void> _fetchTotalTransactions() async {
+    // Simulate a network call to fetch total transactions
+    await Future.delayed(const Duration(seconds: 1));
+    if (mounted) {
+      setState(() {
+        totalTransactions = 123; // Replace with real data from backend
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Main Menu'),
+        backgroundColor: Colors.white, // Background color of the AppBar
+        title: Row(
+          children: [
+            const CircleAvatar(
+              backgroundColor: Colors.green,
+              child: Icon(Icons.person, color: Colors.white),
+            ),
+            const SizedBox(width: 10),
+            Text(_getGreeting(), style: const TextStyle(color: Colors.black)),
+          ],
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.logout, color: Colors.black),
             onPressed: () {
-              // Tambahkan logika logout di sini, misalnya kembali ke halaman login
               Navigator.pushReplacementNamed(context, '/');
             },
           ),
@@ -61,59 +143,61 @@ class MainMenu extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Welcome, $username!',
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
             const SizedBox(height: 20),
-            GridView.count(
-              crossAxisCount: 2,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-              shrinkWrap: true,
-              children: [
-                _buildMenuItem(context, 'Kelola Sampah Organik', Icons.eco,
-                    '/kelola_sampah_organik'),
-                _buildMenuItem(context, 'Bank Sampah',
-                    Icons.account_balance_wallet, '/bank_sampah'),
-              ],
+            Container(
+              width: double.infinity, // Full width
+              padding: const EdgeInsets.all(16.0),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Colors.lightGreen, Colors.green],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(8.0),
+                border: Border.all(color: Colors.green, width: 2),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Total Transaksi: $totalTransactions kg',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const Icon(
+                    Icons.arrow_forward_ios,
+                    color: Colors.white,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildMenuItem(
-      BuildContext context, String title, IconData iconData, String route) {
-    return InkWell(
-      onTap: () {
-        Navigator.pushNamed(context, route);
-      },
-      child: Card(
-        elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Icon(
-                iconData,
-                size: 40,
-                color: Theme.of(context).primaryColor,
-              ),
-              const SizedBox(height: 10),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Beranda',
           ),
-        ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.eco),
+            label: 'Kelola Sampah',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.account_balance_wallet),
+            label: 'Bank Sampah',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.book),
+            label: 'Rumah Edukasi',
+          ),
+        ],
       ),
     );
   }
