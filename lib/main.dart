@@ -1,10 +1,13 @@
-// ignore_for_file: library_private_types_in_public_api
+// ignore_for_file: library_private_types_in_public_api, avoid_print
 
 import 'package:flutter/material.dart';
-import 'bank_sampah.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
 import 'login_page.dart';
 import 'register_page.dart';
 import 'kelola_sampah_organik.dart';
+import 'bank_sampah.dart';
 import 'rumah_edukasi.dart';
 
 void main() {
@@ -25,15 +28,16 @@ class MyApp extends StatelessWidget {
           selectedItemColor: Colors.green,
           unselectedItemColor: Colors.grey,
         ),
-        scaffoldBackgroundColor: Colors.grey[200], // Background color of the Scaffold
+        scaffoldBackgroundColor: Colors.grey[200],
       ),
       initialRoute: '/',
       routes: {
         '/': (context) => const LoginPage(),
         '/register': (context) => RegisterPage(),
-        '/main': (context) => const MainMenu(),
         '/kelola_sampah_organik': (context) => const KelolaSampahOrganikPage(),
-        '/bank_sampah': (context) => const BankSampahPage(),
+        '/bank_sampah': (context) => const BankSampahPage(
+              username: '',
+            ),
         '/rumah_edukasi': (context) => const RumahEdukasiPage(),
       },
       onGenerateRoute: (settings) {
@@ -60,7 +64,7 @@ class MainMenu extends StatefulWidget {
 
 class _MainMenuState extends State<MainMenu> {
   int _selectedIndex = 0;
-  int totalTransactions = 0; // Placeholder for total transactions
+  int totalTransactions = 0;
 
   @override
   void didChangeDependencies() {
@@ -85,7 +89,11 @@ class _MainMenuState extends State<MainMenu> {
         Navigator.pushReplacementNamed(context, '/kelola_sampah_organik');
         break;
       case 2:
-        Navigator.pushReplacementNamed(context, '/bank_sampah');
+        Navigator.pushNamed(context, '/bank_sampah').then((value) {
+          if (value == true) {
+            _fetchTotalTransactions();
+          }
+        });
         break;
       case 3:
         Navigator.pushReplacementNamed(context, '/rumah_edukasi');
@@ -105,12 +113,22 @@ class _MainMenuState extends State<MainMenu> {
   }
 
   Future<void> _fetchTotalTransactions() async {
-    // Simulate a network call to fetch total transactions
-    await Future.delayed(const Duration(seconds: 1));
-    if (mounted) {
-      setState(() {
-        totalTransactions = 123; // Replace with real data from backend
-      });
+    try {
+      final response = await http.get(
+        Uri.parse(
+            'http://192.168.101.7:3000/total_transactions?username=${widget.username}'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          totalTransactions = data['total_transactions'];
+        });
+      } else {
+        throw Exception('Failed to load total transactions');
+      }
+    } catch (e) {
+      print('Error fetching total transactions: $e');
     }
   }
 
@@ -118,7 +136,7 @@ class _MainMenuState extends State<MainMenu> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white, // Background color of the AppBar
+        backgroundColor: Colors.white,
         title: Row(
           children: [
             const CircleAvatar(
@@ -145,7 +163,7 @@ class _MainMenuState extends State<MainMenu> {
           children: [
             const SizedBox(height: 20),
             Container(
-              width: double.infinity, // Full width
+              width: double.infinity,
               padding: const EdgeInsets.all(16.0),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(

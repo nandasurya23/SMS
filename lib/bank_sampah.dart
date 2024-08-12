@@ -1,15 +1,18 @@
-// ignore_for_file: library_private_types_in_public_api
+// ignore_for_file: library_private_types_in_public_api, use_build_context_synchronously
 
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class BankSampahPage extends StatefulWidget {
-  const BankSampahPage({super.key});
+  const BankSampahPage({super.key, required String username});
 
   @override
   _BankSampahPageState createState() => _BankSampahPageState();
 }
 
 class _BankSampahPageState extends State<BankSampahPage> {
+  final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _plastikController = TextEditingController();
   final TextEditingController _kertasController = TextEditingController();
   final TextEditingController _botolController = TextEditingController();
@@ -17,7 +20,8 @@ class _BankSampahPageState extends State<BankSampahPage> {
   bool _dataValid = false;
 
   void _validateData() {
-    if (_plastikController.text.isNotEmpty &&
+    if (_usernameController.text.isNotEmpty &&
+        _plastikController.text.isNotEmpty &&
         _kertasController.text.isNotEmpty &&
         _botolController.text.isNotEmpty &&
         _notesController.text.isNotEmpty) {
@@ -46,11 +50,51 @@ class _BankSampahPageState extends State<BankSampahPage> {
     }
   }
 
-  int _updateTotalTransactions() {
+  Future<void> _submitData() async {
     int plastik = int.tryParse(_plastikController.text) ?? 0;
     int kertas = int.tryParse(_kertasController.text) ?? 0;
     int botol = int.tryParse(_botolController.text) ?? 0;
-    return plastik + kertas + botol;
+    String username = _usernameController.text;
+
+    final response = await http.post(
+      Uri.parse('http://192.168.101.7:3000/transactions'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'username': username,
+        'plastik': plastik,
+        'kertas': kertas,
+        'botol': botol,
+        'notes': _notesController.text,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      setState(() {
+        _dataValid = true; // Menampilkan pesan sukses
+        _plastikController.clear(); // Kosongkan inputan plastik
+        _kertasController.clear(); // Kosongkan inputan kertas
+        _botolController.clear(); // Kosongkan inputan botol
+        _notesController.clear(); // Kosongkan inputan notes
+      });
+    } else {
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Error'),
+            content: const Text('Gagal menyimpan data.'),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
+    }
   }
 
   void _showConfirmationDialog() {
@@ -73,22 +117,26 @@ class _BankSampahPageState extends State<BankSampahPage> {
             ),
             TextButton(
               onPressed: () {
-                int totalTransactions = _updateTotalTransactions();
                 Navigator.pop(context); // Tutup dialog konfirmasi
-                Navigator.pushReplacementNamed(
-                  context,
-                  '/main',
-                  arguments: {
-                    'username': 'User123', // Ganti dengan username yang sesungguhnya
-                    'totalTransactions': totalTransactions,
-                  },
-                );
+                _submitData(); // Simpan data dan tetap di halaman
               },
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+              ),
               child: const Text('Konfirmasi'),
             ),
           ],
         );
       },
+    );
+  }
+
+  void _navigateToPage(String routeName) {
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      routeName,
+      (route) => false,
     );
   }
 
@@ -109,6 +157,14 @@ class _BankSampahPageState extends State<BankSampahPage> {
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 20),
+              TextFormField(
+                controller: _usernameController,
+                decoration: const InputDecoration(
+                  labelText: 'Username',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 10),
               TextFormField(
                 controller: _plastikController,
                 keyboardType: TextInputType.number,
@@ -152,7 +208,8 @@ class _BankSampahPageState extends State<BankSampahPage> {
               ElevatedButton(
                 onPressed: _validateData,
                 style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.white, backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.green,
                   minimumSize: const Size.fromHeight(50),
                 ),
                 child: const Text('Simpan'),
@@ -164,11 +221,6 @@ class _BankSampahPageState extends State<BankSampahPage> {
                       style: TextStyle(fontSize: 16, color: Colors.green),
                     )
                   : Container(),
-              const SizedBox(height: 20),
-              Text(
-                'Total Transaksi: ${_updateTotalTransactions()} kg',
-                style: const TextStyle(fontSize: 16, color: Colors.green),
-              ),
             ],
           ),
         ),
@@ -177,11 +229,11 @@ class _BankSampahPageState extends State<BankSampahPage> {
         currentIndex: 2,
         onTap: (index) {
           if (index == 0) {
-            Navigator.pushReplacementNamed(context, '/main');
+            _navigateToPage('/main');
           } else if (index == 1) {
-            Navigator.pushReplacementNamed(context, '/kelola_sampah_organik');
+            _navigateToPage('/kelola_sampah_organik');
           } else if (index == 3) {
-            Navigator.pushReplacementNamed(context, '/rumah_edukasi');
+            _navigateToPage('/rumah_edukasi');
           }
         },
         items: const [
