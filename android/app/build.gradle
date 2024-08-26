@@ -40,6 +40,11 @@ android {
         main.java.srcDirs += 'src/main/kotlin'
     }
 
+    compileSdkVersion 34
+    defaultConfig {
+        targetSdkVersion 34
+    }
+
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId "com.example.flutter_application"

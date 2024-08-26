@@ -1,143 +1,198 @@
-// ignore_for_file: library_private_types_in_public_api, use_build_context_synchronously
+// ignore_for_file: non_constant_identifier_names, prefer_typing_uninitialized_variables, library_private_types_in_public_api, unnecessary_null_comparison
 
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:image_picker/image_picker.dart';
+import 'locations.dart';
+import 'bottom_navigation_bar.dart';
 
 class BankSampahPage extends StatefulWidget {
-  const BankSampahPage({super.key, required String username});
+  const BankSampahPage({super.key});
 
   @override
   _BankSampahPageState createState() => _BankSampahPageState();
 }
 
 class _BankSampahPageState extends State<BankSampahPage> {
-  final TextEditingController _usernameController = TextEditingController();
-  final TextEditingController _plastikController = TextEditingController();
-  final TextEditingController _kertasController = TextEditingController();
-  final TextEditingController _botolController = TextEditingController();
-  final TextEditingController _notesController = TextEditingController();
-  bool _dataValid = false;
+  final ImagePicker _picker = ImagePicker();
+  final List<File> _imageFiles = [];
+  final _formKey = GlobalKey<FormState>();
+  String? _selectedWasteType;
+  final List<String> _wasteTypes = ['Plastik', 'Kertas', 'Botol'];
+  final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _weightController = TextEditingController();
 
-  void _validateData() {
-    if (_usernameController.text.isNotEmpty &&
-        _plastikController.text.isNotEmpty &&
-        _kertasController.text.isNotEmpty &&
-        _botolController.text.isNotEmpty &&
-        _notesController.text.isNotEmpty) {
-      _showConfirmationDialog();
-    } else {
+  Future<void> _pickImage() async {
+    final pickedFiles = await _picker.pickMultiImage();
+    if (pickedFiles != null) {
       setState(() {
-        _dataValid = false;
+        _imageFiles.addAll(pickedFiles.map((file) => File(file.path)));
       });
-      showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: const Text('Peringatan'),
-            content: const Text('Mohon lengkapi semua informasi.'),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: const Text('OK'),
-              ),
-            ],
-          );
-        },
-      );
     }
   }
 
-  Future<void> _submitData() async {
-    int plastik = int.tryParse(_plastikController.text) ?? 0;
-    int kertas = int.tryParse(_kertasController.text) ?? 0;
-    int botol = int.tryParse(_botolController.text) ?? 0;
-    String username = _usernameController.text;
-
-    final response = await http.post(
-      Uri.parse('http://192.168.101.7:3000/transactions'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'username': username,
-        'plastik': plastik,
-        'kertas': kertas,
-        'botol': botol,
-        'notes': _notesController.text,
-      }),
-    );
-
-    if (response.statusCode == 200) {
-      setState(() {
-        _dataValid = true; // Menampilkan pesan sukses
-        _plastikController.clear(); // Kosongkan inputan plastik
-        _kertasController.clear(); // Kosongkan inputan kertas
-        _botolController.clear(); // Kosongkan inputan botol
-        _notesController.clear(); // Kosongkan inputan notes
-      });
-    } else {
-      showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: const Text('Error'),
-            content: const Text('Gagal menyimpan data.'),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: const Text('OK'),
-              ),
-            ],
-          );
-        },
-      );
-    }
-  }
-
-  void _showConfirmationDialog() {
+  void _showInputDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Konfirmasi'),
-          content: const Text('Apakah Anda ingin menyimpan data ini?'),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              style: TextButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
+          title: const Text('Jual Sampah'),
+          content: SingleChildScrollView(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  TextFormField(
+                    controller: _addressController,
+                    decoration: const InputDecoration(
+                      labelText: 'Alamat',
+                      prefixIcon: Icon(Icons.home_outlined),
+                      border: OutlineInputBorder(),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Color(0xFF40A858)),
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Alamat tidak boleh kosong';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  TextFormField(
+                    controller: _weightController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Berapa kg sampah',
+                      prefixIcon: Icon(Icons.balance),
+                      border: OutlineInputBorder(),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Color(0xFF40A858)),
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Jumlah sampah tidak boleh kosong';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  DropdownButtonFormField<String>(
+                    value: _selectedWasteType,
+                    items: _wasteTypes
+                        .map((type) => DropdownMenuItem<String>(
+                              value: type,
+                              child: Text(type),
+                            ))
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedWasteType = value;
+                      });
+                    },
+                    decoration: const InputDecoration(
+                      labelText: 'Jenis Sampah',
+                      prefixIcon: Icon(Icons.category),
+                      border: OutlineInputBorder(),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Color(0xFF40A858)),
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null) {
+                        return 'Jenis sampah tidak boleh kosong';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  _imageFiles.isEmpty
+                      ? ElevatedButton(
+                          onPressed: _pickImage,
+                          child: const Text('Unggah Gambar Sampah'),
+                        )
+                      : Column(
+                          children: _imageFiles
+                              .map((file) => Stack(
+                                    children: [
+                                      Image.file(
+                                        file,
+                                        height: 100,
+                                        width: 100,
+                                        fit: BoxFit.cover,
+                                      ),
+                                      Positioned(
+                                        right: 0,
+                                        child: IconButton(
+                                          icon: const Icon(Icons.remove_circle,
+                                              color: Colors.red),
+                                          onPressed: () {
+                                            setState(() {
+                                              _imageFiles.remove(file);
+                                            });
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  ))
+                              .toList(),
+                        ),
+                  const SizedBox(height: 10),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (_formKey.currentState?.validate() ?? false) {
+                        // Redirect to WA Admin
+                        final String message =
+                            'Alamat: ${_addressController.text}\n'
+                            'Jumlah Sampah: ${_weightController.text} kg\n'
+                            'Jenis Sampah: $_selectedWasteType';
+                        const String phoneNumber =
+                            '6281339684249'; // Ganti dengan nomor WA admin
+                        final String url =
+                            'https://wa.me/$phoneNumber?text=${Uri.encodeComponent(message)}';
+                        Navigator.of(context).push(MaterialPageRoute(
+                          builder: (context) => WebViewPage(url: url),
+                        ));
+                        // Update total transaksi
+                        Navigator.of(context).pop();
+                      }
+                    },
+                    child: const Text('Jual'),
+                  ),
+                  const SizedBox(height: 10),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text('Close'),
+                  ),
+                ],
               ),
-              child: const Text('Batal'),
             ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context); // Tutup dialog konfirmasi
-                _submitData(); // Simpan data dan tetap di halaman
-              },
-              style: TextButton.styleFrom(
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Konfirmasi'),
-            ),
-          ],
+          ),
         );
       },
     );
   }
 
-  void _navigateToPage(String routeName) {
-    Navigator.pushNamedAndRemoveUntil(
-      context,
-      routeName,
-      (route) => false,
-    );
+  void _onItemTapped(BuildContext context, int index) {
+    if (index == 0) {
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        '/main',
+        (Route<dynamic> route) => false,
+      );
+    } else if (index == 1) {
+      Navigator.pushNamed(context, '/kelola_sampah_organik');
+    } else if (index == 2) {
+      // Halaman ini (Bank Sampah) sudah terbuka
+    } else if (index == 3) {
+      Navigator.pushNamed(context, '/rumah_edukasi');
+    }
   }
 
   @override
@@ -147,114 +202,136 @@ class _BankSampahPageState extends State<BankSampahPage> {
         title: const Text('Bank Sampah'),
       ),
       body: SingleChildScrollView(
-        child: Container(
-          padding: const EdgeInsets.all(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              const Text(
-                'Jual Sampah',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
               const SizedBox(height: 20),
-              TextFormField(
-                controller: _usernameController,
-                decoration: const InputDecoration(
-                  labelText: 'Username',
-                  border: OutlineInputBorder(),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16.0),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF40A858), Color(0xFF2B9444)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(8.0),
                 ),
-              ),
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: _plastikController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Jumlah Sampah Plastik (kg)',
-                  suffixIcon: Icon(Icons.balance),
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: _kertasController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Jumlah Sampah Kertas (kg)',
-                  suffixIcon: Icon(Icons.balance),
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: _botolController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Jumlah Sampah Botol (kg)',
-                  suffixIcon: Icon(Icons.balance),
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: _notesController,
-                keyboardType: TextInputType.text,
-                decoration: const InputDecoration(
-                  labelText: 'Masukan Note',
-                  suffixIcon: Icon(Icons.assignment),
-                  border: OutlineInputBorder(),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Total Transaksi: 0 kg',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    Icon(
+                      Icons.arrow_forward_ios,
+                      color: Colors.white,
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _validateData,
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  backgroundColor: Colors.green,
-                  minimumSize: const Size.fromHeight(50),
-                ),
-                child: const Text('Simpan'),
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: locations.length,
+                itemBuilder: (context, index) {
+                  final location = locations[index];
+                  return GestureDetector(
+                    onTap: () => _showInputDialog(context),
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(vertical: 8.0),
+                      padding: const EdgeInsets.all(8.0),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8.0),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.3),
+                            blurRadius: 5.0,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8.0),
+                            child: Image.asset(
+                              location.image,
+                              height: 130,
+                              width: 130,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  location.name,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 5),
+                                Text(
+                                  location.address,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
-              const SizedBox(height: 20),
-              _dataValid
-                  ? const Text(
-                      'Data berhasil disimpan!',
-                      style: TextStyle(fontSize: 16, color: Colors.green),
-                    )
-                  : Container(),
             ],
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: CustomBottomNavigationBar(
         currentIndex: 2,
-        onTap: (index) {
-          if (index == 0) {
-            _navigateToPage('/main');
-          } else if (index == 1) {
-            _navigateToPage('/kelola_sampah_organik');
-          } else if (index == 3) {
-            _navigateToPage('/rumah_edukasi');
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Beranda',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.eco),
-            label: 'Kelola Sampah',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.account_balance_wallet),
-            label: 'Bank Sampah',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.book),
-            label: 'Rumah Edukasi',
-          ),
-        ],
+        onTap: (index) => _onItemTapped(context, index), onItemTapped: (index) {  },
       ),
     );
   }
 }
+
+// Halaman WebView
+class WebViewPage extends StatelessWidget {
+  final String url;
+
+  const WebViewPage({super.key, required this.url});
+
+  @override
+  Widget build(BuildContext context) {
+    var JavascriptMode;
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Konfirmasi Penjualan'),
+      ),
+      body: WebView(
+        initialUrl: url,
+        javascriptMode: JavascriptMode.unrestricted,
+      ),
+    );
+  }
+}
+
+WebView({required String initialUrl, required javascriptMode}) {}
