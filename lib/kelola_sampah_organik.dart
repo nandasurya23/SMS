@@ -1,4 +1,4 @@
-// ignore_for_file: library_private_types_in_public_api, unused_field, no_leading_underscores_for_local_identifiers, unnecessary_to_list_in_spreads
+// ignore_for_file: library_private_types_in_public_api, unused_field, no_leading_underscores_for_local_identifiers
 
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -11,17 +11,23 @@ class LubangBiopori {
   DateTime waktuTanam;
   DateTime waktuPanen;
   File? foto;
+  bool isPenuh;
+  bool isPanen;
 
   LubangBiopori({
     required this.nomor,
     required this.nama,
     required this.waktuTanam,
     required this.foto,
+    this.isPenuh = false,
+    this.isPanen = false,
   }) : waktuPanen = waktuTanam.add(const Duration(days: 60));
 
   void setWaktuPanen(DateTime waktuPanen) {
     this.waktuPanen = waktuPanen;
   }
+
+  void setWaktuTanam(DateTime dateTime) {}
 }
 
 class KelolaSampahOrganikPage extends StatefulWidget {
@@ -36,10 +42,37 @@ class _KelolaSampahOrganikPageState extends State<KelolaSampahOrganikPage> {
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _timeController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
-  final List<LubangBiopori> _selectedBioporis = [];
+  final TextEditingController _searchController = TextEditingController();
+  final List<LubangBiopori> _allBioporis =
+      []; // Store all bioporis for searching
+  List<LubangBiopori> _filteredBioporis = [];
   DateTime? _waktuTanam;
   DateTime? _waktuPanenKompos;
   File? _selectedImage;
+
+  @override
+  void initState() {
+    super.initState();
+    _filteredBioporis = _allBioporis;
+    _searchController.addListener(_filterBioporis);
+  }
+
+  void _filterBioporis() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      _filteredBioporis = _allBioporis.where((biopori) {
+        final nameMatch = biopori.nama.toLowerCase().contains(query);
+        final numberMatch = biopori.nomor.toString().contains(query);
+        return nameMatch || numberMatch;
+      }).toList();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   void _selectDate(BuildContext context) async {
     final DateTime? pickedDate = await showDatePicker(
@@ -90,7 +123,7 @@ class _KelolaSampahOrganikPageState extends State<KelolaSampahOrganikPage> {
   }
 
   DateTime _calculatePanenKompos(DateTime waktuTanam) {
-    return waktuTanam.add(const Duration(days: 60));
+    return waktuTanam.add(const Duration(days: 21));
   }
 
   Future<void> _selectImage() async {
@@ -179,12 +212,14 @@ class _KelolaSampahOrganikPageState extends State<KelolaSampahOrganikPage> {
                     _dateController.text.isNotEmpty &&
                     _timeController.text.isNotEmpty) {
                   setState(() {
-                    _selectedBioporis.add(LubangBiopori(
-                      nomor: _selectedBioporis.length + 1,
+                    final newBiopori = LubangBiopori(
+                      nomor: _allBioporis.length + 1,
                       nama: _nameController.text,
                       waktuTanam: _waktuTanam ?? DateTime.now(),
                       foto: _selectedImage,
-                    ));
+                    );
+                    _allBioporis.add(newBiopori);
+                    _filterBioporis(); // Update filtered list
                     _nameController.clear();
                     _dateController.clear();
                     _timeController.clear();
@@ -206,26 +241,99 @@ class _KelolaSampahOrganikPageState extends State<KelolaSampahOrganikPage> {
     );
   }
 
-  String _formatDate(DateTime dateTime) {
-    return "${dateTime.day.toString().padLeft(2, '0')} ${_getMonthName(dateTime.month)} ${dateTime.year}";
+  void _editBiopori(LubangBiopori biopori) {
+    _nameController.text = biopori.nama;
+    _dateController.text = _formatDate(biopori.waktuTanam);
+    _timeController.text =
+        biopori.waktuTanam.toLocal().toString().substring(11, 16);
+    _waktuTanam = biopori.waktuTanam;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Ubah Biopori'),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                TextFormField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Nama Biopori',
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: _dateController,
+                  readOnly: true,
+                  onTap: () => _selectDate(context),
+                  decoration: const InputDecoration(
+                    labelText: 'Tanggal Tanam',
+                    suffixIcon: Icon(Icons.calendar_today),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: _timeController,
+                  readOnly: true,
+                  onTap: () => _selectTime(context),
+                  decoration: const InputDecoration(
+                    labelText: 'Jam Tanam',
+                    suffixIcon: Icon(Icons.access_time),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  biopori.nama = _nameController.text;
+                  biopori.setWaktuTanam(_waktuTanam ?? biopori.waktuTanam);
+                  _filterBioporis(); // Update filtered list
+                });
+                Navigator.pop(context);
+              },
+              child: const Text('Simpan'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Batal'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
-  String _getMonthName(int month) {
-    const monthNames = [
-      'Januari',
-      'Februari',
-      'Maret',
-      'April',
-      'Mei',
-      'Juni',
-      'Juli',
-      'Agustus',
-      'September',
-      'Oktober',
-      'November',
-      'Desember'
-    ];
-    return monthNames[month - 1];
+  void _markAsPenuh(LubangBiopori biopori) {
+    setState(() {
+      biopori.isPenuh = true;
+      _filterBioporis(); // Update filtered list
+    });
+  }
+
+  void _markAsPanen(LubangBiopori biopori) {
+    setState(() {
+      biopori.isPanen = true;
+      biopori.isPenuh = true; // Ensure it is marked full
+      _filterBioporis(); // Update filtered list
+    });
+  }
+
+  void _deleteBiopori(LubangBiopori biopori) {
+    setState(() {
+      _allBioporis.remove(biopori);
+      _filteredBioporis.remove(biopori);
+    });
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
   }
 
   @override
@@ -234,219 +342,197 @@ class _KelolaSampahOrganikPageState extends State<KelolaSampahOrganikPage> {
       appBar: AppBar(
         title: const Text('Kelola Sampah Organik'),
       ),
-      body: SingleChildScrollView(
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Row(
-                children: [
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                      child: TextFormField(
-                        decoration: InputDecoration(
-                          contentPadding: const EdgeInsets.symmetric(
-                              vertical: 12, horizontal: 16),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          labelText: 'Cari Lubang Biopori',
-                          hintText: 'Masukkan nama biopori...',
-                          suffixIcon: const Icon(Icons.search),
-                          // Menambahkan padding internal pada label dan hint
-                          labelStyle: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w400,
-                          ),
-                          hintStyle: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w300,
-                          ),
-                        ),
+      body: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Cari Biopori...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30.0),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  ElevatedButton(
-                    onPressed: _showAddBioporiForm,
-                    style: ElevatedButton.styleFrom(
-                      shape: const CircleBorder(),
-                      padding: const EdgeInsets.all(16),
-                      backgroundColor: Colors.green,
-                    ),
-                    child: const Icon(Icons.add, color: Colors.white),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: _showAddBioporiForm,
+                  style: ElevatedButton.styleFrom(
+                    shape: const CircleBorder(),
+                    backgroundColor: Colors.green,
+                    padding: const EdgeInsets.all(12),
                   ),
-                ],
+                  child: const Icon(Icons.add, color: Colors.white),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Expanded(
+              child: ListView.builder(
+                itemCount: _filteredBioporis.length,
+                itemBuilder: (context, index) {
+                  final biopori = _filteredBioporis[index];
+                  return Stack(
+                    children: [
+                      Card(
+                        color: biopori.isPenuh ? Colors.grey : Colors.white,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              biopori.foto != null
+                                  ? ClipRRect(
+                                      borderRadius: BorderRadius.circular(10.0),
+                                      child: Image.file(
+                                        biopori.foto!,
+                                        height: 150,
+                                        width: double.infinity,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    )
+                                  : Container(
+                                      height: 150,
+                                      width: double.infinity,
+                                      color: Colors.grey[300],
+                                      child: const Icon(Icons.image, size: 80),
+                                    ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Nama: ${biopori.nama}',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                      'Tanggal ${_formatDate(biopori.waktuTanam)}'),
+                                  Text(
+                                      'Tanggal ${_formatDate(biopori.waktuPanen)}'),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Jam Tanam: ${biopori.waktuTanam.toLocal().toString().substring(11, 16)}',
+                                  ),
+                                  Text(
+                                    'Jam Panen: ${biopori.waktuPanen.toLocal().toString().substring(11, 16)}',
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    margin: const EdgeInsets.only(right: 8.0),
+                                    child: ElevatedButton(
+                                      onPressed:
+                                          biopori.isPenuh || biopori.isPanen
+                                              ? null
+                                              : () => _editBiopori(biopori),
+                                      style: ElevatedButton.styleFrom(
+                                        foregroundColor:
+                                            biopori.isPenuh || biopori.isPanen
+                                                ? Colors.grey
+                                                : Colors.white,
+                                        backgroundColor:
+                                            biopori.isPenuh || biopori.isPanen
+                                                ? Colors.grey[600]
+                                                : const Color(0xFF85D545),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(10.0),
+                                        ),
+                                      ),
+                                      child: const Text('Ubah'),
+                                    ),
+                                  ),
+                                  Container(
+                                    margin: const EdgeInsets.only(right: 8.0),
+                                    child: ElevatedButton(
+                                      onPressed:
+                                          biopori.isPenuh || biopori.isPanen
+                                              ? null
+                                              : () => _markAsPenuh(biopori),
+                                      style: ElevatedButton.styleFrom(
+                                        foregroundColor:
+                                            biopori.isPenuh || biopori.isPanen
+                                                ? Colors.grey
+                                                : Colors.white,
+                                        backgroundColor:
+                                            biopori.isPenuh || biopori.isPanen
+                                                ? Colors.grey[600]
+                                                : const Color(0xFF2B9444),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(10.0),
+                                        ),
+                                      ),
+                                      child: biopori.isPanen
+                                          ? const Text(
+                                              'Kosong',
+                                            )
+                                          : const Text('Penuh'),
+                                    ),
+                                  ),
+                                  if (biopori.isPenuh && !biopori.isPanen)
+                                    Container(
+                                      margin: const EdgeInsets.only(left: 8.0),
+                                      child: ElevatedButton(
+                                        onPressed: () => _markAsPanen(biopori),
+                                        style: ElevatedButton.styleFrom(
+                                          foregroundColor: Colors.white,
+                                          backgroundColor:
+                                              const Color(0xFF2B9444),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(10.0),
+                                          ),
+                                        ),
+                                        child: const Text('Panen'),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () => _deleteBiopori(biopori),
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
-              const SizedBox(height: 20),
-              ..._selectedBioporis
-                  .map((biopori) => _buildBioporiContainer(biopori))
-                  .toList(),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
       bottomNavigationBar: CustomBottomNavigationBar(
         currentIndex: 1,
         onTap: (index) => _onItemTapped(context, index),
         onItemTapped: (index) {},
-      ), // Custom menu di bagian bawah
-    );
-  }
-
-  Widget _buildBioporiContainer(LubangBiopori biopori) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
-            spreadRadius: 2,
-            blurRadius: 5,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: biopori.foto == null
-                ? Image.asset(
-                    'assets/images/placeholder.png',
-                    height: 100,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  )
-                : Image.file(
-                    biopori.foto!,
-                    height: 100,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            biopori.nama,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Tgl ${_formatDate(biopori.waktuTanam)}',
-              ),
-              Text(
-                'Tgl ${_formatDate(biopori.waktuPanen)}',
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Jam Tanam: ${biopori.waktuTanam.toLocal().toString().substring(11, 16)}',
-              ),
-              Text(
-                'Jam Panen: ${biopori.waktuTanam.toLocal().toString().substring(11, 16)}',
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment:
-                MainAxisAlignment.center, // Menempatkan tombol di tengah
-            children: [
-              Container(
-                margin: const EdgeInsets.only(right: 10), // Jarak antara tombol
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Implementasi fungsi 'Ubah'
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    elevation: 0,
-                    padding: EdgeInsets.zero,
-                  ).copyWith(
-                    side: MaterialStateProperty.all(BorderSide.none),
-                  ),
-                  child: Ink(
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFA2D54E), Color(0xFF85D545)],
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                      ),
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    child: Container(
-                      constraints:
-                          const BoxConstraints(maxWidth: 150, maxHeight: 50),
-                      alignment: Alignment.center,
-                      child: const Text(
-                        'Ubah',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              Container(
-                margin: const EdgeInsets.only(left: 10), // Jarak antara tombol
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Implementasi fungsi 'Penuh'
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    elevation: 0,
-                    padding: EdgeInsets.zero,
-                  ).copyWith(
-                    side: MaterialStateProperty.all(BorderSide.none),
-                  ),
-                  child: Ink(
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF40A858), Color(0xFF2B9444)],
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                      ),
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    child: Container(
-                      constraints:
-                          const BoxConstraints(maxWidth: 150, maxHeight: 50),
-                      alignment: Alignment.center,
-                      child: const Text(
-                        'Penuh',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          )
-        ],
       ),
     );
   }

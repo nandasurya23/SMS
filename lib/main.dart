@@ -220,7 +220,7 @@ class _MainMenuState extends State<MainMenu> {
             ),
             const SizedBox(height: 10),
             SizedBox(
-              height: 200, 
+              height: 200,
               child: PageView.builder(
                 controller: _pageController,
                 itemCount: locations.length,
@@ -239,7 +239,7 @@ class _MainMenuState extends State<MainMenu> {
                           borderRadius: BorderRadius.circular(8.0),
                           child: Image.asset(
                             location.image,
-                            height: 140, 
+                            height: 140,
                             width: double.infinity,
                             fit: BoxFit.cover,
                           ),
@@ -276,7 +276,8 @@ class _MainMenuState extends State<MainMenu> {
       ),
       bottomNavigationBar: CustomBottomNavigationBar(
         currentIndex: _selectedIndex,
-        onTap: _onItemTapped, onItemTapped: (index) {  },
+        onTap: _onItemTapped,
+        onItemTapped: (index) {},
       ),
     );
   }
