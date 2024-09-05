@@ -1,8 +1,9 @@
-// ignore_for_file: non_constant_identifier_names, prefer_typing_uninitialized_variables, library_private_types_in_public_api, unnecessary_null_comparison
+// ignore_for_file: non_constant_identifier_names, prefer_typing_uninitialized_variables, library_private_types_in_public_api, unnecessary_null_comparison, deprecated_member_use, use_build_context_synchronously
 
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'locations.dart';
 import 'bottom_navigation_bar.dart';
 
@@ -143,9 +144,9 @@ class _BankSampahPageState extends State<BankSampahPage> {
                         ),
                   const SizedBox(height: 10),
                   ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
                       if (_formKey.currentState?.validate() ?? false) {
-                        // Redirect to WA Admin
+                        // Redirect to WhatsApp
                         final String message =
                             'Alamat: ${_addressController.text}\n'
                             'Jumlah Sampah: ${_weightController.text} kg\n'
@@ -154,9 +155,13 @@ class _BankSampahPageState extends State<BankSampahPage> {
                             '6281339684249'; // Ganti dengan nomor WA admin
                         final String url =
                             'https://wa.me/$phoneNumber?text=${Uri.encodeComponent(message)}';
-                        Navigator.of(context).push(MaterialPageRoute(
-                          builder: (context) => WebViewPage(url: url),
-                        ));
+
+                        if (await canLaunch(url)) {
+                          await launch(url);
+                        } else {
+                          throw 'Could not launch $url';
+                        }
+
                         // Update total transaksi
                         Navigator.of(context).pop();
                       }
@@ -307,31 +312,9 @@ class _BankSampahPageState extends State<BankSampahPage> {
       ),
       bottomNavigationBar: CustomBottomNavigationBar(
         currentIndex: 2,
-        onTap: (index) => _onItemTapped(context, index), onItemTapped: (index) {  },
+        onTap: (index) => _onItemTapped(context, index),
+        onItemTapped: (index) {},
       ),
     );
   }
 }
-
-// Halaman WebView
-class WebViewPage extends StatelessWidget {
-  final String url;
-
-  const WebViewPage({super.key, required this.url});
-
-  @override
-  Widget build(BuildContext context) {
-    var JavascriptMode;
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Konfirmasi Penjualan'),
-      ),
-      body: WebView(
-        initialUrl: url,
-        javascriptMode: JavascriptMode.unrestricted,
-      ),
-    );
-  }
-}
-
-WebView({required String initialUrl, required javascriptMode}) {}
