@@ -20,6 +20,7 @@ class _BankSampahPageState extends State<BankSampahPage> {
   final _formKey = GlobalKey<FormState>();
   String? _selectedWasteType;
   final List<String> _wasteTypes = ['Plastik', 'Kertas', 'Botol'];
+  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _weightController = TextEditingController();
 
@@ -45,6 +46,23 @@ class _BankSampahPageState extends State<BankSampahPage> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
+                  TextFormField(
+                    controller: _nameController,
+                    decoration: const InputDecoration(
+                      labelText: "Nama",
+                      prefixIcon: Icon(Icons.account_circle_outlined),
+                      border: OutlineInputBorder(),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Color(0xFF40A858)),
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Nama tidak boleh kosong';
+                      }
+                      return null;
+                    },
+                  ),
                   TextFormField(
                     controller: _addressController,
                     decoration: const InputDecoration(
@@ -148,6 +166,7 @@ class _BankSampahPageState extends State<BankSampahPage> {
                       if (_formKey.currentState?.validate() ?? false) {
                         // Redirect to WhatsApp
                         final String message =
+                            'Halo admin, saya bapak/ibu: ${_nameController.text} saya ingin menjual sampah, berikut detailnya:\n'
                             'Alamat: ${_addressController.text}\n'
                             'Jumlah Sampah: ${_weightController.text} kg\n'
                             'Jenis Sampah: $_selectedWasteType';

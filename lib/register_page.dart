@@ -165,7 +165,7 @@ class _RegisterPageState extends State<RegisterPage> {
     try {
       // Send registration request to the backend
       final response = await http.post(
-        Uri.parse('http://192.168.101.7:3000/register'),
+        Uri.parse('http://172.20.10.3:3000/register'),
         headers: {
           'Content-Type': 'application/json',
         },

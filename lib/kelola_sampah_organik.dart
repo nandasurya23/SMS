@@ -1,4 +1,4 @@
-// ignore_for_file: library_private_types_in_public_api, unused_field, no_leading_underscores_for_local_identifiers
+// ignore_for_file: library_private_types_in_public_api, unused_field, no_leading_underscores_for_local_identifiers, unnecessary_this
 
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -18,16 +18,20 @@ class LubangBiopori {
     required this.nomor,
     required this.nama,
     required this.waktuTanam,
+    required this.waktuPanen,
     required this.foto,
     this.isPenuh = false,
     this.isPanen = false,
-  }) : waktuPanen = waktuTanam.add(const Duration(days: 60));
+  });
 
   void setWaktuPanen(DateTime waktuPanen) {
     this.waktuPanen = waktuPanen;
   }
 
-  void setWaktuTanam(DateTime dateTime) {}
+  void setWaktuTanam(DateTime dateTime) {
+    this.waktuTanam = dateTime;
+    this.waktuPanen = dateTime.add(const Duration(days: 60));
+  }
 }
 
 class KelolaSampahOrganikPage extends StatefulWidget {
@@ -216,6 +220,8 @@ class _KelolaSampahOrganikPageState extends State<KelolaSampahOrganikPage> {
                       nomor: _allBioporis.length + 1,
                       nama: _nameController.text,
                       waktuTanam: _waktuTanam ?? DateTime.now(),
+                      waktuPanen: _waktuPanenKompos ??
+                          DateTime.now().add(const Duration(days: 60)),
                       foto: _selectedImage,
                     );
                     _allBioporis.add(newBiopori);
@@ -290,6 +296,7 @@ class _KelolaSampahOrganikPageState extends State<KelolaSampahOrganikPage> {
             TextButton(
               onPressed: () {
                 setState(() {
+                  // Update biopori with new user inputs
                   biopori.nama = _nameController.text;
                   biopori.setWaktuTanam(_waktuTanam ?? biopori.waktuTanam);
                   _filterBioporis(); // Update filtered list
@@ -319,8 +326,16 @@ class _KelolaSampahOrganikPageState extends State<KelolaSampahOrganikPage> {
 
   void _markAsPanen(LubangBiopori biopori) {
     setState(() {
+      // Set waktuTanam and waktuPanen based on user input or the current state
+      if (_waktuTanam != null) {
+        biopori.setWaktuTanam(_waktuTanam!);
+      }
+
+      // Update state
       biopori.isPanen = true;
-      biopori.isPenuh = true; // Ensure it is marked full
+      biopori.isPenuh =
+          false; // Reset isPenuh to allow "Penuh" button to be visible again
+
       _filterBioporis(); // Update filtered list
     });
   }
