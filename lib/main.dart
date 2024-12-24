@@ -23,7 +23,6 @@ class MyApp extends StatelessWidget {
         '/': (context) => LoginPage(),
         '/register': (context) => RegisterPage(),
         '/main': (context) => const MainMenu(username: ''),
-        // tambahkan rute untuk halaman utama aplikasi jika diperlukan
       },
     );
   }

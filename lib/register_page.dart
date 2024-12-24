@@ -2,10 +2,14 @@
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:crypto/crypto.dart';
+import 'dart:convert';
 
 class RegisterPage extends StatelessWidget {
   final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _rePasswordController = TextEditingController();
 
   RegisterPage({Key? key});
 
@@ -26,9 +30,20 @@ class RegisterPage extends StatelessWidget {
             ),
             const SizedBox(height: 16.0),
             TextField(
+              controller: _emailController,
+              decoration: const InputDecoration(labelText: 'Email'),
+            ),
+            const SizedBox(height: 16.0),
+            TextField(
               controller: _passwordController,
               obscureText: true,
               decoration: const InputDecoration(labelText: 'Password'),
+            ),
+            const SizedBox(height: 16.0),
+            TextField(
+              controller: _rePasswordController,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: 'Re-Enter Password'),
             ),
             const SizedBox(height: 32.0),
             ElevatedButton(
@@ -45,14 +60,40 @@ class RegisterPage extends StatelessWidget {
 
   void _register(BuildContext context) async {
     final username = _usernameController.text;
+    final email = _emailController.text;
     final password = _passwordController.text;
+    final rePassword = _rePasswordController.text;
+
+    // Validasi email tidak boleh kosong
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Email cannot be empty.'),
+        ),
+      );
+      return;
+    }
+
+    // Validasi password dan re-password
+    if (password != rePassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Passwords do not match.'),
+        ),
+      );
+      return;
+    }
+
+    // Hashing password menggunakan algoritma SHA-256
+    final hashedPassword = sha256.convert(utf8.encode(password)).toString();
 
     // Kirim permintaan registrasi ke backend
     final response = await http.post(
-      Uri.parse('http://192.168.101.53:3000/register'),
+      Uri.parse('http://192.168.101.7:3000/register'),
       body: {
         'username': username,
-        'password': password,
+        'email': email,
+        'password': hashedPassword,
       },
     );
 

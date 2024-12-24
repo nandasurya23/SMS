@@ -1,13 +1,15 @@
-// ignore_for_file: use_build_context_synchronously
+// ignore_for_file: use_build_context_synchronously, unused_import, non_constant_identifier_names, use_key_in_widget_constructors
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:bcrypt/bcrypt.dart';
 
 class LoginPage extends StatelessWidget {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  LoginPage({Key? key}) : super(key: key);
+  LoginPage({Key? key});
 
   @override
   Widget build(BuildContext context) {
@@ -54,19 +56,20 @@ class LoginPage extends StatelessWidget {
     final username = _usernameController.text;
     final password = _passwordController.text;
 
-    // Kirim permintaan login ke backend
+    // Hash password using bcrypt
+    final hashedPassword = await _hashPassword(password);
+
+    // Send login request to backend
     final response = await http.post(
-      Uri.parse('http://192.168.101.53:3000/login'),
+      Uri.parse('http://192.168.100.7:3000/login'),
       body: {
         'username': username,
-        'password': password,
+        'password': hashedPassword,
       },
     );
 
     if (response.statusCode == 200) {
-      // Jika login berhasil, arahkan ke halaman lain (misalnya halaman utama aplikasi)
       Navigator.pushNamed(context, '/main');
-      // Tampilkan alert
       showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -85,7 +88,7 @@ class LoginPage extends StatelessWidget {
         },
       );
     } else {
-      // Jika login gagal, tampilkan pesan kesalahan
+      // If login failed, show error message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content:
@@ -93,5 +96,12 @@ class LoginPage extends StatelessWidget {
         ),
       );
     }
+  }
+
+  Future<String> _hashPassword(String password) async {
+    // Hash password using bcrypt
+    final salt = BCrypt.gensalt();
+    final hashedPassword = BCrypt.hashpw(password, salt);
+    return hashedPassword;
   }
 }
