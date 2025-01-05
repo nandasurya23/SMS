@@ -2,6 +2,7 @@
 
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_application/profile_setting.dart';
 import 'login_page.dart';
 import 'register_page.dart';
 import 'kelola_sampah_organik.dart';
@@ -9,6 +10,7 @@ import 'bank_sampah.dart';
 import 'rumah_edukasi.dart';
 import 'locations.dart';
 import 'bottom_navigation_bar.dart';
+import 'sidebar.dart';
 
 void main() {
   runApp(const MyApp());
@@ -37,6 +39,7 @@ class MyApp extends StatelessWidget {
         '/kelola_sampah_organik': (context) => const KelolaSampahOrganikPage(),
         '/bank_sampah': (context) => const BankSampahPage(),
         '/rumah_edukasi': (context) => const RumahEdukasiPage(),
+        '/profile_settings': (context) => const ProfileSettingsPage(),
       },
       onGenerateRoute: (settings) {
         if (settings.name == '/main') {
@@ -130,26 +133,10 @@ class _MainMenuState extends State<MainMenu> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        title: Row(
-          children: [
-            const CircleAvatar(
-              backgroundColor: Colors.green,
-              child: Icon(Icons.person, color: Colors.white),
-            ),
-            const SizedBox(width: 10),
-            Text(_getGreeting(), style: const TextStyle(color: Colors.black)),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.black),
-            onPressed: () {
-              Navigator.pushReplacementNamed(context, '/');
-            },
-          ),
-        ],
+      appBar: AppBar(backgroundColor: Colors.white),
+      drawer: Sidebar(
+        username: widget.username ?? '',
+        greeting: _getGreeting(), // Menambahkan greeting ke Sidebar
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

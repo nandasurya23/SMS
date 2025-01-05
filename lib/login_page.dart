@@ -24,11 +24,11 @@ class _LoginPageState extends State<LoginPage> {
         fit: StackFit.expand,
         children: <Widget>[
           Image.asset(
-            'assets/background.jpeg', // Ganti dengan path gambar background Anda
+            'assets/background.jpeg',
             fit: BoxFit.cover,
           ),
           Container(
-            color: Colors.black54, // Memberikan efek gelap pada background
+            color: Colors.black54,
           ),
           Center(
             child: SingleChildScrollView(
@@ -37,7 +37,7 @@ class _LoginPageState extends State<LoginPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   Image.asset(
-                    'assets/logo.png', // Ganti dengan path logo Anda
+                    'assets/logo.png',
                     height: 100.0,
                   ),
                   const SizedBox(height: 24.0),
@@ -105,7 +105,8 @@ class _LoginPageState extends State<LoginPage> {
                             alignment: Alignment.centerRight,
                             child: TextButton(
                               onPressed: () {
-                                Navigator.pushNamed(context, '/forgot-password');
+                                Navigator.pushNamed(
+                                    context, '/forgot-password');
                               },
                               child: const Text('Forgot Password?'),
                             ),
@@ -118,7 +119,7 @@ class _LoginPageState extends State<LoginPage> {
                                 _login(context);
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green, // Warna hijau pada tombol login
+                                backgroundColor: Colors.green,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8.0),
                                 ),
@@ -166,7 +167,7 @@ class _LoginPageState extends State<LoginPage> {
 
     // Send login request to the backend
     final response = await http.post(
-      Uri.parse('http://172.20.10.3:3000/login'),
+      Uri.parse('http://192.168.1.15:3000/login'),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -178,7 +179,8 @@ class _LoginPageState extends State<LoginPage> {
 
     if (response.statusCode == 200) {
       final responseData = jsonDecode(response.body);
-      final username = responseData['user']['username']; // Ambil username dari response
+      final username =
+          responseData['user']['username']; // Ambil username dari response
 
       // Navigate to main menu and pass username
       Navigator.pushReplacementNamed(

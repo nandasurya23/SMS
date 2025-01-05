@@ -1,6 +1,7 @@
-// ignore_for_file: library_private_types_in_public_api, unused_field, no_leading_underscores_for_local_identifiers, unnecessary_this
+// ignore_for_file: library_private_types_in_public_api, unused_field, no_leading_underscores_for_local_identifiers, unnecessary_this, unused_local_variable
 
 import 'dart:io';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'bottom_navigation_bar.dart';
@@ -79,45 +80,80 @@ class _KelolaSampahOrganikPageState extends State<KelolaSampahOrganikPage> {
   }
 
   void _selectDate(BuildContext context) async {
-    final DateTime? pickedDate = await showDatePicker(
+    final DateTime? pickedDate = await showCupertinoModalPopup(
       context: context,
-      initialDate: _waktuTanam ?? DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
-    );
-    if (pickedDate != null) {
-      setState(() {
-        _waktuTanam = DateTime(
-          pickedDate.year,
-          pickedDate.month,
-          pickedDate.day,
-          _waktuTanam?.hour ?? 0,
-          _waktuTanam?.minute ?? 0,
+      builder: (BuildContext context) {
+        return CupertinoActionSheet(
+          title: const Text('Select Date'),
+          actions: <Widget>[
+            SizedBox(
+              height: 200,
+              child: CupertinoDatePicker(
+                mode: CupertinoDatePickerMode.date,
+                initialDateTime: _waktuTanam ?? DateTime.now(),
+                minimumYear: 2000,
+                maximumYear: 2100,
+                onDateTimeChanged: (DateTime newDateTime) {
+                  setState(() {
+                    _waktuTanam = newDateTime;
+                    _dateController.text = _formatDate(newDateTime);
+                    _updatePanenKompos();
+                  });
+                },
+              ),
+            ),
+          ],
+          cancelButton: CupertinoActionSheetAction(
+            child: const Text('Cancel'),
+            onPressed: () {
+              Navigator.pop(context);
+            },
+          ),
         );
-        _dateController.text = _formatDate(pickedDate);
-        _updatePanenKompos();
-      });
-    }
+      },
+    );
   }
 
   void _selectTime(BuildContext context) async {
-    final TimeOfDay? pickedTime = await showTimePicker(
+    final TimeOfDay? pickedTime = await showCupertinoModalPopup(
       context: context,
-      initialTime: TimeOfDay.now(),
-    );
-    if (pickedTime != null) {
-      setState(() {
-        _waktuTanam = DateTime(
-          _waktuTanam?.year ?? DateTime.now().year,
-          _waktuTanam?.month ?? DateTime.now().month,
-          _waktuTanam?.day ?? DateTime.now().day,
-          pickedTime.hour,
-          pickedTime.minute,
+      builder: (BuildContext context) {
+        return CupertinoActionSheet(
+          title: const Text('Select Time'),
+          actions: <Widget>[
+            SizedBox(
+              height: 200,
+              child: CupertinoTimerPicker(
+                initialTimerDuration: Duration(
+                  hours: _waktuTanam?.hour ?? 0,
+                  minutes: _waktuTanam?.minute ?? 0,
+                ),
+                onTimerDurationChanged: (Duration newDuration) {
+                  setState(() {
+                    _waktuTanam = DateTime(
+                      _waktuTanam?.year ?? DateTime.now().year,
+                      _waktuTanam?.month ?? DateTime.now().month,
+                      _waktuTanam?.day ?? DateTime.now().day,
+                      newDuration.inHours,
+                      newDuration.inMinutes % 60,
+                    );
+                    _timeController.text =
+                        '${newDuration.inHours}:${newDuration.inMinutes % 60}';
+                    _updatePanenKompos();
+                  });
+                },
+              ),
+            ),
+          ],
+          cancelButton: CupertinoActionSheetAction(
+            child: const Text('Cancel'),
+            onPressed: () {
+              Navigator.pop(context);
+            },
+          ),
         );
-        _timeController.text = pickedTime.format(context);
-        _updatePanenKompos();
-      });
-    }
+      },
+    );
   }
 
   void _updatePanenKompos() {
@@ -158,63 +194,71 @@ class _KelolaSampahOrganikPageState extends State<KelolaSampahOrganikPage> {
   }
 
   void _showAddBioporiForm() {
-    showDialog(
+    showCupertinoDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
+        return CupertinoAlertDialog(
           title: const Text('Tambah Biopori'),
-          content: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                TextFormField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nama Biopori',
+          content: Column(
+            children: [
+              const SizedBox(height: 10),
+              CupertinoTextField(
+                controller: _nameController,
+                placeholder: 'Nama Biopori',
+                padding: const EdgeInsets.all(12.0),
+              ),
+              const SizedBox(height: 10),
+              GestureDetector(
+                onTap: () => _selectDate(context),
+                child: AbsorbPointer(
+                  child: CupertinoTextField(
+                    controller: _dateController,
+                    placeholder: 'Tanggal Tanam',
+                    suffix: const Icon(CupertinoIcons.calendar, size: 20),
+                    padding: const EdgeInsets.all(12.0),
                   ),
                 ),
-                const SizedBox(height: 10),
-                TextFormField(
-                  controller: _dateController,
-                  readOnly: true,
-                  onTap: () => _selectDate(context),
-                  decoration: const InputDecoration(
-                    labelText: 'Tanggal Tanam',
-                    suffixIcon: Icon(Icons.calendar_today),
+              ),
+              const SizedBox(height: 10),
+              GestureDetector(
+                onTap: () => _selectTime(context),
+                child: AbsorbPointer(
+                  child: CupertinoTextField(
+                    controller: _timeController,
+                    placeholder: 'Jam Tanam',
+                    suffix: const Icon(CupertinoIcons.time, size: 20),
+                    padding: const EdgeInsets.all(12.0),
                   ),
                 ),
-                const SizedBox(height: 10),
-                TextFormField(
-                  controller: _timeController,
-                  readOnly: true,
-                  onTap: () => _selectTime(context),
-                  decoration: const InputDecoration(
-                    labelText: 'Jam Tanam',
-                    suffixIcon: Icon(Icons.access_time),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                _selectedImage == null
-                    ? ElevatedButton(
-                        onPressed: _selectImage,
-                        child: const Text('Pilih Foto'),
-                      )
-                    : Image.file(
-                        _selectedImage!,
-                        height: 100,
-                        width: 100,
-                        fit: BoxFit.cover,
+              ),
+              const SizedBox(height: 10),
+              _selectedImage == null
+                  ? CupertinoButton.filled(
+                      onPressed: _selectImage,
+                      child: const Text('Pilih Foto'),
+                    )
+                  : Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8.0),
+                        child: Image.file(
+                          _selectedImage!,
+                          height: 100,
+                          width: 100,
+                          fit: BoxFit.cover,
+                        ),
                       ),
-              ],
-            ),
+                    ),
+            ],
           ),
-          actions: <Widget>[
-            TextButton(
+          actions: [
+            CupertinoDialogAction(
               onPressed: () {
-                Navigator.pop(context);
                 if (_nameController.text.isNotEmpty &&
                     _dateController.text.isNotEmpty &&
-                    _timeController.text.isNotEmpty) {
+                    _timeController.text.isNotEmpty &&
+                    _selectedImage != null) {
+                  Navigator.pop(context);
                   setState(() {
                     final newBiopori = LubangBiopori(
                       nomor: _allBioporis.length + 1,
@@ -231,14 +275,34 @@ class _KelolaSampahOrganikPageState extends State<KelolaSampahOrganikPage> {
                     _timeController.clear();
                     _selectedImage = null;
                   });
+                } else {
+                  // Show a Cupertino dialog or a message if fields are empty
+                  showCupertinoDialog(
+                    context: context,
+                    builder: (context) {
+                      return CupertinoAlertDialog(
+                        title: const Text('Error'),
+                        content: const Text('Harap lengkapi semua field.'),
+                        actions: [
+                          CupertinoDialogAction(
+                            onPressed: () {
+                              Navigator.pop(context);
+                            },
+                            child: const Text('OK'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
                 }
               },
               child: const Text('Simpan'),
             ),
-            TextButton(
+            CupertinoDialogAction(
               onPressed: () {
                 Navigator.pop(context);
               },
+              isDestructiveAction: true,
               child: const Text('Batal'),
             ),
           ],
@@ -254,46 +318,46 @@ class _KelolaSampahOrganikPageState extends State<KelolaSampahOrganikPage> {
         biopori.waktuTanam.toLocal().toString().substring(11, 16);
     _waktuTanam = biopori.waktuTanam;
 
-    showDialog(
+    showCupertinoModalPopup(
       context: context,
       builder: (context) {
-        return AlertDialog(
+        return CupertinoAlertDialog(
           title: const Text('Ubah Biopori'),
           content: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                TextFormField(
+                CupertinoTextField(
                   controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nama Biopori',
-                  ),
+                  placeholder: 'Nama Biopori',
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                 ),
                 const SizedBox(height: 10),
-                TextFormField(
+                CupertinoTextField(
                   controller: _dateController,
                   readOnly: true,
                   onTap: () => _selectDate(context),
-                  decoration: const InputDecoration(
-                    labelText: 'Tanggal Tanam',
-                    suffixIcon: Icon(Icons.calendar_today),
-                  ),
+                  placeholder: 'Tanggal Tanam',
+                  suffix: const Icon(CupertinoIcons.calendar),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                 ),
                 const SizedBox(height: 10),
-                TextFormField(
+                CupertinoTextField(
                   controller: _timeController,
                   readOnly: true,
                   onTap: () => _selectTime(context),
-                  decoration: const InputDecoration(
-                    labelText: 'Jam Tanam',
-                    suffixIcon: Icon(Icons.access_time),
-                  ),
+                  placeholder: 'Jam Tanam',
+                  suffix: const Icon(CupertinoIcons.time),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                 ),
               ],
             ),
           ),
           actions: <Widget>[
-            TextButton(
+            CupertinoDialogAction(
               onPressed: () {
                 setState(() {
                   // Update biopori with new user inputs
@@ -305,7 +369,7 @@ class _KelolaSampahOrganikPageState extends State<KelolaSampahOrganikPage> {
               },
               child: const Text('Simpan'),
             ),
-            TextButton(
+            CupertinoDialogAction(
               onPressed: () {
                 Navigator.pop(context);
               },
@@ -326,17 +390,14 @@ class _KelolaSampahOrganikPageState extends State<KelolaSampahOrganikPage> {
 
   void _markAsPanen(LubangBiopori biopori) {
     setState(() {
-      // Set waktuTanam and waktuPanen based on user input or the current state
+      // Reset status biopori
+      biopori.isPanen = false; // Set to false so buttons reappear
+      biopori.isPenuh = false; // Set to false to re-enable "Penuh" button
+      // Update waktuTanam and waktuPanen if needed
       if (_waktuTanam != null) {
         biopori.setWaktuTanam(_waktuTanam!);
       }
-
-      // Update state
-      biopori.isPanen = true;
-      biopori.isPenuh =
-          false; // Reset isPenuh to allow "Penuh" button to be visible again
-
-      _filterBioporis(); // Update filtered list
+      _filterBioporis(); // Refresh the list
     });
   }
 
@@ -456,19 +517,16 @@ class _KelolaSampahOrganikPageState extends State<KelolaSampahOrganikPage> {
                                   Container(
                                     margin: const EdgeInsets.only(right: 8.0),
                                     child: ElevatedButton(
-                                      onPressed:
-                                          biopori.isPenuh || biopori.isPanen
-                                              ? null
-                                              : () => _editBiopori(biopori),
+                                      onPressed: biopori.isPanen
+                                          ? null
+                                          : () => _editBiopori(biopori),
                                       style: ElevatedButton.styleFrom(
-                                        foregroundColor:
-                                            biopori.isPenuh || biopori.isPanen
-                                                ? Colors.grey
-                                                : Colors.white,
-                                        backgroundColor:
-                                            biopori.isPenuh || biopori.isPanen
-                                                ? Colors.grey[600]
-                                                : const Color(0xFF85D545),
+                                        foregroundColor: biopori.isPanen
+                                            ? Colors.grey
+                                            : Colors.white,
+                                        backgroundColor: biopori.isPanen
+                                            ? Colors.grey[600]
+                                            : const Color(0xFF85D545),
                                         shape: RoundedRectangleBorder(
                                           borderRadius:
                                               BorderRadius.circular(10.0),
@@ -480,29 +538,22 @@ class _KelolaSampahOrganikPageState extends State<KelolaSampahOrganikPage> {
                                   Container(
                                     margin: const EdgeInsets.only(right: 8.0),
                                     child: ElevatedButton(
-                                      onPressed:
-                                          biopori.isPenuh || biopori.isPanen
-                                              ? null
-                                              : () => _markAsPenuh(biopori),
+                                      onPressed: biopori.isPanen
+                                          ? null
+                                          : () => _markAsPenuh(biopori),
                                       style: ElevatedButton.styleFrom(
-                                        foregroundColor:
-                                            biopori.isPenuh || biopori.isPanen
-                                                ? Colors.grey
-                                                : Colors.white,
-                                        backgroundColor:
-                                            biopori.isPenuh || biopori.isPanen
-                                                ? Colors.grey[600]
-                                                : const Color(0xFF2B9444),
+                                        foregroundColor: biopori.isPanen
+                                            ? Colors.grey
+                                            : Colors.white,
+                                        backgroundColor: biopori.isPanen
+                                            ? Colors.grey[600]
+                                            : const Color(0xFF2B9444),
                                         shape: RoundedRectangleBorder(
                                           borderRadius:
                                               BorderRadius.circular(10.0),
                                         ),
                                       ),
-                                      child: biopori.isPanen
-                                          ? const Text(
-                                              'Kosong',
-                                            )
-                                          : const Text('Penuh'),
+                                      child: const Text('Penuh'),
                                     ),
                                   ),
                                   if (biopori.isPenuh && !biopori.isPanen)
