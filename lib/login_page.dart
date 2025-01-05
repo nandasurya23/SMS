@@ -1,6 +1,7 @@
 // ignore_for_file: use_build_context_synchronously, library_private_types_in_public_api
 
 import 'package:crypto/crypto.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -19,75 +20,98 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        fit: StackFit.expand,
-        children: <Widget>[
-          Image.asset(
-            'assets/background.jpeg',
-            fit: BoxFit.cover,
-          ),
-          Container(
-            color: Colors.black54,
-          ),
-          Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Image.asset(
-                    'assets/logo.png',
-                    height: 100.0,
-                  ),
-                  const SizedBox(height: 24.0),
-                  Card(
-                    elevation: 8.0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10.0),
+    return CupertinoPageScaffold(
+      navigationBar: const CupertinoNavigationBar(
+        middle: Text('Login'),
+      ),
+      child: SafeArea(
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Full-size background image
+            Image.asset(
+              'assets/background.jpeg',
+              fit: BoxFit.cover,
+            ),
+            Container(
+              color: Colors
+                  .black54, // Semi-transparent overlay for better readability
+            ),
+            Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Image.asset(
+                      'assets/logo.png',
+                      height: 100.0,
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        children: <Widget>[
-                          const Text(
-                            'Welcome Back!',
-                            style: TextStyle(
-                              fontSize: 24.0,
-                              fontWeight: FontWeight.bold,
-                            ),
+                    const SizedBox(height: 24.0),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: CupertinoColors.white,
+                        borderRadius: BorderRadius.circular(16.0),
+                        boxShadow: [
+                          BoxShadow(
+                            color:
+                                CupertinoColors.inactiveGray.withOpacity(0.2),
+                            spreadRadius: 2,
+                            blurRadius: 10,
                           ),
-                          const SizedBox(height: 8.0),
-                          const Text(
-                            'Please login to your account',
-                            style: TextStyle(
-                              fontSize: 16.0,
-                            ),
-                          ),
-                          const SizedBox(height: 24.0),
-                          TextField(
-                            controller: _phoneController,
-                            decoration: InputDecoration(
-                              labelText: 'Phone Number',
-                              prefixIcon: const Icon(Icons.phone),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8.0),
+                        ],
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          children: <Widget>[
+                            const Text(
+                              'Welcome Back!',
+                              style: TextStyle(
+                                fontSize: 24.0,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
                               ),
                             ),
-                            keyboardType: TextInputType.phone,
-                          ),
-                          const SizedBox(height: 16.0),
-                          TextField(
-                            controller: _passwordController,
-                            obscureText: _obscureText,
-                            decoration: InputDecoration(
-                              labelText: 'Password',
-                              prefixIcon: const Icon(Icons.lock),
-                              suffixIcon: IconButton(
-                                icon: Icon(
+                            const SizedBox(height: 8.0),
+                            const Text(
+                              'Please login to your account',
+                              style: TextStyle(
+                                fontSize: 16.0,
+                                color: Colors.black,
+                              ),
+                            ),
+                            const SizedBox(height: 24.0),
+                            CupertinoTextField(
+                              controller: _phoneController,
+                              placeholder: 'Phone Number',
+                              prefix: const Padding(
+                                padding: EdgeInsets.all(8.0),
+                                child: Icon(CupertinoIcons.phone),
+                              ),
+                              keyboardType: TextInputType.phone,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8.0),
+                                border: Border.all(
+                                  color: CupertinoColors.inactiveGray,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16.0),
+                            CupertinoTextField(
+                              controller: _passwordController,
+                              placeholder: 'Password',
+                              obscureText: _obscureText,
+                              prefix: const Padding(
+                                padding: EdgeInsets.all(8.0),
+                                child: Icon(CupertinoIcons.lock),
+                              ),
+                              suffix: CupertinoButton(
+                                padding: EdgeInsets.zero,
+                                child: Icon(
                                   _obscureText
-                                      ? Icons.visibility
-                                      : Icons.visibility_off,
+                                      ? CupertinoIcons.eye
+                                      : CupertinoIcons.eye_slash,
                                 ),
                                 onPressed: () {
                                   setState(() {
@@ -95,65 +119,64 @@ class _LoginPageState extends State<LoginPage> {
                                   });
                                 },
                               ),
-                              border: OutlineInputBorder(
+                              decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(8.0),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8.0),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton(
-                              onPressed: () {
-                                Navigator.pushNamed(
-                                    context, '/forgot-password');
-                              },
-                              child: const Text('Forgot Password?'),
-                            ),
-                          ),
-                          const SizedBox(height: 32.0),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: () {
-                                _login(context);
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8.0),
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16.0,
+                                border: Border.all(
+                                  color: CupertinoColors.inactiveGray,
                                 ),
                               ),
+                            ),
+                            const SizedBox(height: 8.0),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: CupertinoButton(
+                                padding: EdgeInsets.zero,
+                                child: const Text(
+                                  'Forgot Password?',
+                                  style: TextStyle(
+                                      color: Colors.green), // Green text color
+                                ),
+                                onPressed: () {
+                                  Navigator.pushNamed(
+                                      context, '/forgot-password');
+                                },
+                              ),
+                            ),
+                            const SizedBox(height: 32.0),
+                            CupertinoTheme(
+                              data: const CupertinoThemeData(
+                                primaryColor:
+                                    Colors.green, // Set your custom color here
+                              ),
+                              child: CupertinoButton.filled(
+                                onPressed: () {
+                                  _login(context);
+                                },
+                                child: const Text('Login'),
+                              ),
+                            ),
+                            const SizedBox(height: 16.0),
+                            CupertinoButton(
+                              padding: EdgeInsets.zero,
                               child: const Text(
-                                'Login',
+                                'Don\'t have an account? Register here',
                                 style: TextStyle(
-                                    fontSize: 16.0, color: Colors.white),
+                                    color: Colors.green), // Green text color
                               ),
-                            ),
-                          ),
-                          const SizedBox(height: 16.0),
-                          SizedBox(
-                            width: double.infinity,
-                            child: TextButton(
                               onPressed: () {
                                 Navigator.pushNamed(context, '/register');
                               },
-                              child: const Text(
-                                  'Don\'t have an account? Register here'),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -167,7 +190,7 @@ class _LoginPageState extends State<LoginPage> {
 
     // Send login request to the backend
     final response = await http.post(
-      Uri.parse('http://192.168.1.15:3000/login'),
+      Uri.parse('http://192.168.101.100:3000/login'),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -189,10 +212,22 @@ class _LoginPageState extends State<LoginPage> {
         arguments: username,
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Login failed. ${response.body}'),
-        ),
+      showCupertinoDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return CupertinoAlertDialog(
+            title: const Text('Login failed'),
+            content: Text('Error: ${response.body}'),
+            actions: <Widget>[
+              CupertinoDialogAction(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          );
+        },
       );
     }
   }
